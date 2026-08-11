@@ -1,15 +1,14 @@
-import { auth } from '../firebase';
+import { getAccessToken } from '../lib/supabase';
 import type { StaffAccount, StaffAccountActionResult, StaffAccountInput, UserRole } from '../types';
 
-const endpoint = '/.netlify/functions/admin-users';
+const endpoint = '/api/admin-users';
 
 async function authedFetch<T>(init?: RequestInit): Promise<T> {
-  const user = auth.currentUser;
-  if (!user) {
+  const token = await getAccessToken();
+  if (!token) {
     throw new Error('Please sign in again to continue.');
   }
 
-  const token = await user.getIdToken(true);
   const response = await fetch(endpoint, {
     ...init,
     headers: {

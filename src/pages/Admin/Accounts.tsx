@@ -10,12 +10,12 @@ import AdminAccessNotice from '../../components/AdminAccessNotice';
 import AdminShell from '../../components/AdminShell';
 
 const defaultSettings: AccountsSettings = {
-  legalName: "Sweta's Studio",
-  tradeName: "Sweta's Studio",
+  legalName: "Sweta's Atelier",
+  tradeName: "Sweta's Atelier",
   gstin: '',
   stateCode: '27',
   stateName: 'Maharashtra',
-  invoicePrefix: 'SWS',
+  invoicePrefix: 'SWA',
   nextInvoiceNumber: 1,
   financialYearLabel: '2026-27',
   defaultGstRate: 5,

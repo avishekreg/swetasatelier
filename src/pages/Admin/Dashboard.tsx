@@ -110,7 +110,7 @@ const AdminDashboard = () => {
   return (
     <AdminShell
       title={<><span>Executive </span><span className="italic">Overview</span></>}
-      subtitle="Sweta's Studio · May 2026 analytics"
+      subtitle="Sweta's Atelier · May 2026 analytics"
       actions={
         <>
           <button

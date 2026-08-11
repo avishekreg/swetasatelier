@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-import { OrderService } from '../services/storeService';
-import { Trash2, ChevronRight, CreditCard, ShieldCheck } from 'lucide-react';
+import { getAccessToken } from '../lib/supabase';
+import { Trash2, CreditCard, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import DesignImage from '../components/DesignImage';
 
@@ -26,50 +26,61 @@ const Cart = () => {
     }
 
     setProcessing(true);
-    
-    // 1. Create Order in Database (Pending)
-    const orderData = {
-      userId: user.uid,
-      items: cart.map(i => ({ 
-        itemId: i.id, 
-        quantity: i.quantity, 
-        type: i.type, 
-        measurements: i.measurements 
-      })),
-      totalAmount: total,
-    };
 
     try {
-      const orderId = await OrderService.createOrder(orderData);
-      
-      // 2. Trigger Razorpay
+      const token = await getAccessToken();
+      if (!token) {
+        throw new Error('Please sign in again to checkout.');
+      }
+
+      const createResponse = await fetch('/api/create-razorpay-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          totalAmount: total,
+          items: cart.map((i) => ({
+            itemId: i.id,
+            quantity: i.quantity,
+            type: i.type,
+            measurements: i.measurements,
+            unitPrice: i.price,
+          })),
+        }),
+      });
+
+      const created = await createResponse.json();
+      if (!createResponse.ok) {
+        throw new Error(created.error || 'Unable to create payment order.');
+      }
+
       const options = {
-        key: "rzp_test_placeholder", // This should be from env in production
-        amount: total * 100, // in paise
-        currency: "INR",
-        name: "Sweta's Studio",
-        description: `Order #${orderId?.slice(-6)}`,
-        image: "https://ais-dev-jskzjyjtdkiutby66km367-114667251545.asia-southeast1.run.app/logo.png",
-        handler: async function (response: any) {
-          // Success Callback
-          await OrderService.updateOrderStatus(orderId!, 'processing', response.razorpay_payment_id);
+        key: created.keyId,
+        amount: created.amount,
+        currency: created.currency || 'INR',
+        name: "Sweta's Atelier",
+        description: `Order #${String(created.orderId).slice(-6)}`,
+        order_id: created.razorpayOrderId,
+        handler: function () {
           clearCart();
           navigate('/orders');
         },
         prefill: {
-          name: user.displayName || "Customer",
+          name: user.displayName || 'Customer',
           email: user.email,
         },
         theme: {
-          color: "#1a1a1a"
-        }
+          color: '#1a1a1a',
+        },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
       console.error(err);
-      alert("Payment initiation failed. Please try again.");
+      alert(err instanceof Error ? err.message : 'Payment initiation failed. Please try again.');
     } finally {
       setProcessing(false);
     }

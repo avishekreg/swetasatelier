@@ -114,7 +114,7 @@ const Home = () => {
       <section className="max-w-4xl mx-auto px-4 text-center space-y-8 py-24 border-y border-black/5">
         <h2 className="text-3xl font-serif">A Legacy of Craftsmanship</h2>
         <p className="text-sm opacity-60 leading-relaxed font-light italic">
-          "Sweta's Studio is born from a passion for detail. We believe every dress tells a story of tradition, woven with contemporary threads. Our collection is a tribute to the craftsmanship of Indian artisans."
+          "Sweta's Atelier is born from a passion for detail. We believe every dress tells a story of tradition, woven with contemporary threads. Our collection is a tribute to the craftsmanship of Indian artisans."
         </p>
         <div className="w-12 h-[1px] bg-[#D4AF37] mx-auto" />
       </section>

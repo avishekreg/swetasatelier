@@ -1,3 +1,5 @@
+import { getAccessToken } from '../lib/supabase';
+
 type FabricAnalysisResult = {
   description?: string;
   suggestedStyles?: string[];
@@ -10,10 +12,16 @@ type CouturePreviewResult = {
 };
 
 async function postToCoutureAi<T>(payload: Record<string, unknown>): Promise<T> {
-  const response = await fetch('/.netlify/functions/ai-couture', {
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('Please sign in to use AI couture tools.');
+  }
+
+  const response = await fetch('/api/ai-couture', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
   });
@@ -35,7 +43,11 @@ export async function analyzeFabric(base64Image: string, mimeType = 'image/jpeg'
   });
 }
 
-export async function simulateVirtualTryOn(base64Image: string, attireType: string, mimeType = 'image/jpeg') {
+export async function simulateVirtualTryOn(
+  base64Image: string,
+  attireType: string,
+  mimeType = 'image/jpeg'
+) {
   return postToCoutureAi<CouturePreviewResult>({
     mode: 'preview',
     imageBase64: base64Image,

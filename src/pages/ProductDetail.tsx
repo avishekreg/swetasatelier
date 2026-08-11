@@ -7,7 +7,7 @@ import { useCart } from '../contexts/CartContext';
 import { Heart, ChevronRight, Ruler, Sparkles, AlertTriangle, Wand2, User as UserIcon, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
-import { GoogleGenAI } from "@google/genai";
+import { simulateVirtualTryOn } from '../services/geminiService';
 import DesignImage from '../components/DesignImage';
 
 const ProductDetail = () => {
@@ -106,9 +106,6 @@ const ProductDetail = () => {
     setTryOnImage(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      
-      // Fetch the fabric image and convert to base64
       const imageResponse = await fetch(tryOnFabricUrl);
       const imageBlob = await imageResponse.blob();
       const base64Data = await new Promise<string>((resolve) => {
@@ -117,35 +114,15 @@ const ProductDetail = () => {
         reader.readAsDataURL(imageBlob);
       });
 
-      const selectedModel = modelOptions.find(m => m.id === tryOnModelType);
-      
-      const prompt = `Virtually create a high-fashion, luxurious ${tryOnAttireType} using the provided fabric texture. 
-      The style should be "Bespoke Indo-Western Couture" by Sweta's Studio. 
-      Subject: ${selectedModel?.prompt}. 
-      Ensure the fabric pattern and color from the provided image are accurately represented on the garment. 
-      Set the scene in a warm, cinematic artisanal atelier with soft bokeh lighting. 
-      The output should be a single, photorealistic, high-resolution fashion editorial image.`;
+      const attireLabel = `${tryOnAttireType} (${tryOnModelType})`;
+      const result = await simulateVirtualTryOn(
+        base64Data,
+        attireLabel,
+        imageBlob.type || 'image/jpeg'
+      );
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            { inlineData: { data: base64Data, mimeType: imageBlob.type } },
-            { text: prompt }
-          ]
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: "3:4"
-          }
-        }
-      });
-
-      for (const part of response.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData) {
-          setTryOnImage(`data:image/png;base64,${part.inlineData.data}`);
-          break;
-        }
+      if (result.generatedImageUrl) {
+        setTryOnImage(result.generatedImageUrl);
       }
     } catch (error) {
       console.error('AI Try-On failed:', error);

@@ -1,26 +1,51 @@
-# Sweta's Studio
+# Sweta's Atelier
 
-Boutique storefront and back-office app built with Vite, React, Firebase, and Netlify.
+Boutique storefront and back-office app built with Vite, React, Supabase, and Vercel.
 
 ## Local development
 
 1. Install dependencies:
    `npm install`
-2. Start the app:
-   `npm run dev`
-3. Verify types:
+2. Copy `.env.example` to `.env.local` and fill values.
+3. Start the app:
+   `npm run dev` (http://localhost:3000)
+4. Verify types:
    `npm run lint`
 
-## Netlify deployment
+## Supabase setup
+
+1. Create a Supabase project.
+2. Run [`supabase-schema.sql`](supabase-schema.sql) in the SQL Editor (tables, RLS, fabrics storage bucket, accounts seed).
+3. Copy the project URL and anon key into `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
+4. Copy the service role key into `SUPABASE_SERVICE_ROLE_KEY` (server only — never expose to Vite).
+
+## Vercel deployment
 
 Build settings:
+- Framework: Vite
 - Build command: `npm run build`
-- Publish directory: `dist`
-- Functions directory: `netlify/functions`
+- Output directory: `dist`
+- API routes: `/api/*` (Node serverless)
 
-## Firebase access model
+SPA fallback is configured in [`vercel.json`](vercel.json).
 
-Current internal roles:
+### Required Vercel environment variables
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Public anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Staff admin + order writes + webhook updates |
+| `GEMINI_API_KEY` | Secure AI couture (`/api/ai-couture`) |
+| `RAZORPAY_KEY_ID` | Checkout key returned by create-order API |
+| `RAZORPAY_KEY_SECRET` | Server-side Razorpay order creation |
+| `RAZORPAY_WEBHOOK_SECRET` | Signature verify on `/api/razorpay-webhook` |
+| `APP_URL` | Public site URL (optional) |
+
+Point Razorpay webhooks to `https://<your-domain>/api/razorpay-webhook` for `payment.captured`.
+
+## Access model (roles)
+
 - `super_admin`: recovery lane, admin resets, access governance
 - `admin`: daily boutique operations and limited staff management
 - `order_fulfillment`
@@ -29,12 +54,8 @@ Current internal roles:
 - `promotions`
 - `customer`
 
-## Required Netlify environment variables for secure staff controls
+RLS policies in `supabase-schema.sql` align staff order/promo access with these roles.
 
-Set these in Netlify before using the super-admin recovery tools:
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_DATABASE_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY`
+## Migration note (Phase 1)
 
-These power the server-side staff management function in `netlify/functions/admin-users.mjs`.
+Phase 1 adds Supabase schema, Vercel API routes, and removes Netlify/Firebase Admin. The browser storefront still uses the Firebase client for Auth/Firestore until Phase 2 rewrites `AuthContext` and `storeService` to Supabase Auth/Postgres.

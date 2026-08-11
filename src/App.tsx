@@ -34,7 +34,7 @@ const Navbar = () => {
             <div className="absolute inset-[3px] md:inset-[4px] rounded-full overflow-hidden bg-[#faf4ea] shadow-[inset_0_0_0_1px_rgba(183,145,79,0.22)]">
               <img
                 src="/images/swetas-studio-mark-header.png"
-                alt="Sweta's Studio mark"
+                alt="Sweta's Atelier mark"
                 className="w-full h-full object-cover rounded-full scale-[1.16] brightness-[1.03] contrast-[1.06]"
               />
             </div>
@@ -169,7 +169,7 @@ export default function App() {
             <footer className="bg-[#1a1a1a] text-[#f5f2ed] py-12 px-4">
               <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
                 <div>
-                  <h3 className="text-xl font-serif mb-4 uppercase tracking-widest">Sweta's Studio</h3>
+                  <h3 className="text-xl font-serif mb-4 uppercase tracking-widest">Sweta's Atelier</h3>
                   <p className="text-sm opacity-60 font-light leading-relaxed">
                     Crafting elegance through every thread. Discover the finest Indian ethnic wear curated for the modern silhouette.
                   </p>
@@ -189,7 +189,7 @@ export default function App() {
                 </div>
               </div>
               <div className="mt-12 pt-8 border-t border-white/10 text-center text-[10px] opacity-40 uppercase tracking-widest">
-                © 2026 Sweta's Studio. All rights reserved.
+                © 2026 Sweta's Atelier. All rights reserved.
               </div>
             </footer>
           </div>

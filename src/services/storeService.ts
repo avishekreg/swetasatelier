@@ -259,12 +259,12 @@ export const PromotionService = {
 
 
 const defaultAccountsSettings: AccountsSettings = {
-  legalName: "Sweta's Studio",
-  tradeName: "Sweta's Studio",
+  legalName: "Sweta's Atelier",
+  tradeName: "Sweta's Atelier",
   gstin: '',
   stateCode: '27',
   stateName: 'Maharashtra',
-  invoicePrefix: 'SWS',
+  invoicePrefix: 'SWA',
   nextInvoiceNumber: 1,
   financialYearLabel: '2026-27',
   defaultGstRate: 5,

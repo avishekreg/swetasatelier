@@ -1,6 +1,6 @@
 {
-  "name": "Sweta's Studio",
-  "description": "An elegant fashion studio app featuring ethnic Indian dress designs, AI-powered virtual try-ons for fabrics, and a complete admin dashboard for inventory and order management.",
+  "name": "Sweta's Atelier",
+  "description": "An elegant atelier boutique featuring ethnic Indian dress designs, AI-powered virtual try-ons for fabrics, and a complete admin dashboard for inventory and order management.",
   "requestFramePermissions": [
     "camera"
   ],
