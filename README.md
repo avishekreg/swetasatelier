@@ -40,9 +40,11 @@ SPA fallback is configured in [`vercel.json`](vercel.json).
 | `RAZORPAY_KEY_ID` | Checkout key returned by create-order API |
 | `RAZORPAY_KEY_SECRET` | Server-side Razorpay order creation |
 | `RAZORPAY_WEBHOOK_SECRET` | Signature verify on `/api/razorpay-webhook` |
-| `APP_URL` | Public site URL (optional) |
+| `VITE_APP_URL` / `APP_URL` | Public site URL (`https://swetasatelier.vercel.app`) |
 
-Point Razorpay webhooks to `https://<your-domain>/api/razorpay-webhook` for `payment.captured`.
+Point Razorpay webhooks to `https://swetasatelier.vercel.app/api/razorpay-webhook` for `payment.captured`.
+
+Production URL: **https://swetasatelier.vercel.app**
 
 ## Access model (roles)
 

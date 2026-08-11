@@ -1,4 +1,4 @@
-# Security Specification - Sweta's Studio
+# Security Specification - Sweta's Atelier
 
 ## Data Invariants
 1. An item must have a valid price (>= 0).

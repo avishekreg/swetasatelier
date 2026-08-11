@@ -268,12 +268,12 @@ const AdminAccounts = () => {
       invoiceNumber: '', invoiceDate: '', customerName: '', customerEmail: '', customerGSTIN: '', placeOfSupply: '', itemSummary: '', taxableAmount: '', gstRate: '', taxMode: '', cgstAmount: '', sgstAmount: '', igstAmount: '', totalAmount: '', paymentStatus: '', paymentMethod: '', notes: '', sourceOrderId: ''
     });
     const csv = [headers.join(','), ...exportRows.map((row) => headers.map((header) => `"${String((row as Record<string, string | number>)[header] ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
-    downloadBlob(`swetas-studio-sales-register-${settings.financialYearLabel}.csv`, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    downloadBlob(`swetasatelier-sales-register-${settings.financialYearLabel}.csv`, new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
   };
 
   const downloadJson = () => {
     downloadBlob(
-      `swetas-studio-accounts-${settings.financialYearLabel}.json`,
+      `swetasatelier-accounts-${settings.financialYearLabel}.json`,
       new Blob([JSON.stringify({ settings, entries: exportRows, summary }, null, 2)], { type: 'application/json' })
     );
   };
@@ -295,7 +295,7 @@ const AdminAccounts = () => {
     const entriesSheet = XLSX.utils.json_to_sheet(exportRows);
     XLSX.utils.book_append_sheet(workbook, summarySheet, 'GST Summary');
     XLSX.utils.book_append_sheet(workbook, entriesSheet, 'Sales Register');
-    XLSX.writeFile(workbook, `swetas-studio-accounts-${settings.financialYearLabel}.xlsx`);
+    XLSX.writeFile(workbook, `swetasatelier-accounts-${settings.financialYearLabel}.xlsx`);
   };
 
   const downloadPdf = () => {
@@ -324,7 +324,7 @@ const AdminAccounts = () => {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [26, 26, 26] },
     });
-    doc.save(`swetas-studio-accounts-${settings.financialYearLabel}.pdf`);
+    doc.save(`swetasatelier-accounts-${settings.financialYearLabel}.pdf`);
   };
 
   const downloadTallyXml = () => {
@@ -379,7 +379,7 @@ const AdminAccounts = () => {
   </BODY>
 </ENVELOPE>`;
 
-    downloadBlob(`swetas-studio-accounts-${settings.financialYearLabel}-tally.xml`, new Blob([xml], { type: 'application/xml' }));
+    downloadBlob(`swetasatelier-accounts-${settings.financialYearLabel}-tally.xml`, new Blob([xml], { type: 'application/xml' }));
   };
 
   if (!canAccessAccounts) return <AdminAccessNotice />;
