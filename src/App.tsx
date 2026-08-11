@@ -33,9 +33,9 @@ const Navbar = () => {
             <div className="absolute inset-[1px] md:inset-[2px] border border-black group-hover:rotate-180 transition-transform duration-1000" />
             <div className="absolute inset-[3px] md:inset-[4px] rounded-full overflow-hidden bg-[#faf4ea] shadow-[inset_0_0_0_1px_rgba(183,145,79,0.22)]">
               <img
-                src="/images/swetas-studio-mark-header.png"
-                alt="Sweta's Atelier mark"
-                className="w-full h-full object-cover rounded-full scale-[1.16] brightness-[1.03] contrast-[1.06]"
+                src="/images/swetas-atelier-mark-header.png"
+                alt="Sweta's Atelier"
+                className="w-full h-full object-cover rounded-full scale-[1.08] brightness-[1.03] contrast-[1.06]"
               />
             </div>
           </div>
@@ -44,7 +44,7 @@ const Navbar = () => {
               Sweta's
             </span>
             <span className="text-[7px] md:text-[9px] font-sans tracking-[0.3em] md:tracking-[0.4em] uppercase text-[#D4AF37] leading-none font-bold">
-              Studio
+              Atelier
             </span>
           </div>
         </Link>

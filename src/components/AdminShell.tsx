@@ -48,7 +48,7 @@ const AdminShell: React.FC<AdminShellProps> = ({ title, subtitle, actions, child
           </button>
           <Link to="/admin" className="hover:opacity-100 transition-opacity">Admin Dashboard</Link>
           <span className="opacity-20">/</span>
-          <span className="opacity-80">Studio Operations</span>
+          <span className="opacity-80">Atelier Operations</span>
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">

@@ -317,7 +317,7 @@ const ProductDetail = () => {
       <section className="mt-24 pt-24 border-t border-black/10">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-4xl font-serif">Studio <span className="italic">Visualizer</span></h2>
+            <h2 className="text-4xl font-serif">Atelier <span className="italic">Visualizer</span></h2>
             <p className="text-[10px] uppercase tracking-[0.4em] opacity-50">AI-Powered Virtual Try-On</p>
             <div className="h-px w-24 bg-[#D4AF37] mx-auto" />
           </div>

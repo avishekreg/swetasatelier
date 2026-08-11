@@ -1,6 +1,6 @@
 {
   "name": "Sweta's Atelier",
-  "description": "An elegant atelier boutique featuring ethnic Indian dress designs, AI-powered virtual try-ons for fabrics, and a complete admin dashboard for inventory and order management.",
+  "description": "Sweta's Atelier — Indo-Western boutique couture with custom hand embroidery, fabric-to-garment AI previews, and a full operations suite for inventory, orders, and accounts.",
   "requestFramePermissions": [
     "camera"
   ],

@@ -53,7 +53,7 @@ const AdminInventory = () => {
       const data = await ItemService.getAllItems();
       setItems(data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load the inventory studio.');
+      setError(err instanceof Error ? err.message : 'Unable to load the inventory atelier.');
     } finally {
       setLoading(false);
     }
@@ -167,7 +167,7 @@ const AdminInventory = () => {
 
   return (
     <AdminShell
-      title={<><span>Inventory & </span><span className="italic">AI Studio</span></>}
+      title={<><span>Inventory & </span><span className="italic">AI Atelier</span></>}
       subtitle="Curate luxury collections, generate descriptions, and organise boutique stock"
     >
       {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm">{error}</div>}

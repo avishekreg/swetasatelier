@@ -79,7 +79,7 @@ const AdminLogin = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto px-4 py-16 lg:py-24">
       <div className="grid grid-cols-1 lg:grid-cols-[1.08fr_0.92fr] gap-10 items-start">
         <section className="space-y-6">
-          <p className="text-[10px] uppercase tracking-[0.35em] opacity-50">Studio Sign In</p>
+          <p className="text-[10px] uppercase tracking-[0.35em] opacity-50">Atelier Sign In</p>
           <h1 className="text-4xl md:text-5xl font-serif leading-tight">One smart login for clients, staff, and super admin.</h1>
           <p className="text-sm leading-relaxed opacity-65 max-w-xl">
             Use a single sign-in entry point. The app reads your assigned role after authentication and routes you to the right destination automatically.
@@ -137,7 +137,7 @@ const AdminLogin = () => {
               <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Email</span>
               <div className="flex items-center gap-3 border border-black/10 px-4 py-3">
                 <Mail size={16} className="opacity-40" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="team@swetasstudio.com" />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-transparent outline-none text-sm" placeholder="team@swetasatelier.com" />
               </div>
             </label>
 

@@ -173,7 +173,7 @@ const StaffManagementPanel: React.FC = () => {
                 value={form.email}
                 onChange={(e) => setForm((current) => ({ ...current, email: e.target.value }))}
                 className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
-                placeholder="team@swetasstudio.com"
+                placeholder="team@swetasatelier.com"
               />
             </label>
             <label className="block space-y-2">

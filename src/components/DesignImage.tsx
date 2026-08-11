@@ -24,7 +24,7 @@ const DesignImage = ({
         )}
       >
         <img
-          src="/images/swetas-studio-mark.png"
+          src="/images/swetas-atelier-mark.png"
           alt=""
           className="w-16 rounded-full sm:w-20 md:w-24"
           loading="lazy"

@@ -36,7 +36,7 @@ const Home = () => {
           >
             <div className="flex items-center space-x-4 md:space-x-6 mb-2 md:mb-4">
                <div className="w-8 md:w-12 h-[1px] bg-[#D4AF37]" />
-               <span className="text-[#D4AF37] text-[8px] md:text-xs uppercase tracking-[0.4em] md:tracking-[0.6em] font-light">Custom Hand-Embroidery</span>
+               <span className="text-[#D4AF37] text-[8px] md:text-xs uppercase tracking-[0.4em] md:tracking-[0.6em] font-light">Indo-Western Couture Atelier</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-serif font-light tracking-tighter text-white leading-tight">
@@ -69,7 +69,7 @@ const Home = () => {
               to="/collections" 
               className="group relative inline-flex items-center space-x-6 md:space-x-10 bg-white text-black px-8 md:px-12 py-4 md:py-5 uppercase text-[8px] md:text-[10px] tracking-[0.3em] md:tracking-[0.4em] font-bold transition-all duration-700 hover:bg-[#D4AF37] hover:text-white"
             >
-              <span className="relative z-10">Explore the Studio</span>
+              <span className="relative z-10">Explore the Atelier</span>
               <ArrowRight size={16} className="relative z-10 group-hover:translate-x-2 md:group-hover:translate-x-3 transition-transform duration-700" />
             </Link>
           </motion.div>

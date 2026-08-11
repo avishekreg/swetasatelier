@@ -89,7 +89,7 @@ const AdminDashboard = () => {
 
   const totalRevenue = useMemo(() => orders.reduce((acc, curr) => acc + curr.totalAmount, 0), [orders]);
 
-  const seedStudio = async () => {
+  const seedAtelier = async () => {
     setSeeding(true);
     setError('');
     try {
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
         <>
           <button
             type="button"
-            onClick={() => void seedStudio()}
+            onClick={() => void seedAtelier()}
             disabled={seeding}
             className="border border-black/10 px-4 py-3 text-[10px] uppercase tracking-[0.3em] font-bold hover:border-black disabled:opacity-50"
           >
