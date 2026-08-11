@@ -11,6 +11,13 @@ type CouturePreviewResult = {
   generatedImageUrl?: string;
 };
 
+type ModelShotResult = {
+  generatedImageUrl?: string;
+  description?: string;
+  storagePath?: string;
+  showcaseType?: string;
+};
+
 async function postToCoutureAi<T>(payload: Record<string, unknown>): Promise<T> {
   const token = await getAccessToken();
   if (!token) {
@@ -54,4 +61,31 @@ export async function simulateVirtualTryOn(
     mimeType,
     attireType,
   });
+}
+
+export async function generateModelShot(input: {
+  imageBase64: string;
+  mimeType?: string;
+  showcaseType?: 'ready_stock' | 'delivered_craft';
+  garmentHint?: string;
+}) {
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('Please sign in to generate model shots.');
+  }
+
+  const response = await fetch('/api/generate-model-shot', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(input),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Unable to generate model shot.');
+  }
+  return data as ModelShotResult;
 }

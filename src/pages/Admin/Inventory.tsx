@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Plus, Trash2, Upload, Wand2 } from 'lucide-react';
+import { CheckCircle2, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { ItemService } from '../../services/storeService';
-import { analyzeFabric, simulateVirtualTryOn } from '../../services/geminiService';
-import type { FashionItem } from '../../types';
+import { ItemService, uploadFabricImage } from '../../services/storeService';
+import { generateModelShot } from '../../services/geminiService';
+import type { FashionItem, ShowcaseType } from '../../types';
 import AdminAccessNotice from '../../components/AdminAccessNotice';
 import AdminShell from '../../components/AdminShell';
 import RoleBadge from '../../components/RoleBadge';
@@ -12,21 +12,27 @@ const emptyItem: Omit<FashionItem, 'id' | 'createdAt'> = {
   name: '',
   description: '',
   price: 0,
+  costPrice: 0,
   category: 'Suit',
   fabricImageUrl: '',
   renderedImageUrl: '',
   stock: 1,
   isOneOfOne: false,
   styles: [],
+  showcaseType: 'ready_stock',
+  salePrice: undefined,
+  sku: '',
+  gstRate: 5,
+  isPublished: true,
 };
 
-
-const previewFallbackStyles = ['Bridal Couture', 'Reception Gown', 'Festive Lehenga'];
-
-function parseImageData(dataUrl: string) {
-  const [metadata, base64Data = ''] = dataUrl.split(',');
-  const mimeType = metadata.match(/data:(.*?);base64/)?.[1] || 'image/jpeg';
-  return { base64Data, mimeType };
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Unable to read image file.'));
+    reader.readAsDataURL(file);
+  });
 }
 
 const AdminInventory = () => {
@@ -35,14 +41,17 @@ const AdminInventory = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [aiResult, setAiResult] = useState<{ description?: string; suggestedStyles?: string[] } | null>(null);
-  const [previewDescription, setPreviewDescription] = useState('');
+  const [shotNote, setShotNote] = useState('');
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
   const [newItem, setNewItem] = useState<Omit<FashionItem, 'id' | 'createdAt'>>(emptyItem);
+  const [sourcePreview, setSourcePreview] = useState('');
 
   const categories = useMemo(
-    () => Array.from(new Set(['Suit', 'Lehenga', 'Saree', 'Ghangra', 'Indo-Western', ...items.map((item) => item.category)])),
+    () =>
+      Array.from(
+        new Set(['Suit', 'Lehenga', 'Saree', 'Ghangra', 'Indo-Western', ...items.map((item) => item.category)])
+      ),
     [items]
   );
 
@@ -63,49 +72,53 @@ const AdminInventory = () => {
     void load();
   }, []);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setNewItem((current) => ({ ...current, fabricImageUrl: reader.result as string }));
-    reader.readAsDataURL(file);
-  };
-
-  const runAiAnalysis = async () => {
-    if (!newItem.fabricImageUrl) return;
     setSaving(true);
     setError('');
+    setShotNote('');
     try {
-      const { base64Data, mimeType } = parseImageData(newItem.fabricImageUrl);
-      const result = await analyzeFabric(base64Data, mimeType);
-      setAiResult(result);
+      const dataUrl = await fileToDataUrl(file);
+      setSourcePreview(dataUrl);
+      const publicUrl = await uploadFabricImage(file, 'source-photos');
       setNewItem((current) => ({
         ...current,
-        description: result.description ?? current.description,
-        styles: (result.suggestedStyles && result.suggestedStyles.length > 0 ? result.suggestedStyles : previewFallbackStyles) ?? current.styles,
+        fabricImageUrl: publicUrl,
+        renderedImageUrl: '',
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The AI atelier could not analyse this fabric just now.');
+      setError(err instanceof Error ? err.message : 'Unable to upload product photo.');
     } finally {
       setSaving(false);
     }
   };
 
-  const runTryOn = async (style: string) => {
-    if (!newItem.fabricImageUrl) return;
+  const runModelShot = async () => {
+    if (!sourcePreview && !newItem.fabricImageUrl) return;
     setSaving(true);
     setError('');
+    setShotNote('');
     try {
-      const { base64Data, mimeType } = parseImageData(newItem.fabricImageUrl);
-      const result = await simulateVirtualTryOn(base64Data, style, mimeType);
+      const dataUrl = sourcePreview || newItem.fabricImageUrl;
+      const [meta, base64 = ''] = dataUrl.includes(',') ? dataUrl.split(',') : ['data:image/jpeg;base64', dataUrl];
+      const mimeType = meta.match(/data:(.*?);base64/)?.[1] || 'image/jpeg';
+
+      const result = await generateModelShot({
+        imageBase64: base64,
+        mimeType,
+        showcaseType: newItem.showcaseType,
+        garmentHint: `${newItem.name || 'Garment'} · ${newItem.category}`,
+      });
+
       setNewItem((current) => ({
         ...current,
-        renderedImageUrl: result.generatedImageUrl || current.renderedImageUrl || current.fabricImageUrl,
-        description: result.detailedDescription || current.description,
+        renderedImageUrl: result.generatedImageUrl || current.renderedImageUrl,
+        description: current.description || result.description || current.description,
       }));
-      setPreviewDescription(result.detailedDescription || '');
+      setShotNote(result.description || 'Model shot ready.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The AI preview could not be generated.');
+      setError(err instanceof Error ? err.message : 'Unable to generate model shot.');
     } finally {
       setSaving(false);
     }
@@ -115,13 +128,19 @@ const AdminInventory = () => {
     setSaving(true);
     setError('');
     try {
-      await ItemService.addItem(newItem);
+      const catalogImage = newItem.renderedImageUrl || newItem.fabricImageUrl;
+      await ItemService.addItem({
+        ...newItem,
+        fabricImageUrl: newItem.fabricImageUrl,
+        renderedImageUrl: catalogImage,
+        stock: newItem.showcaseType === 'delivered_craft' ? Math.max(newItem.stock, 0) : newItem.stock,
+      });
       setNewItem(emptyItem);
-      setAiResult(null);
-      setPreviewDescription('');
+      setSourcePreview('');
+      setShotNote('');
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to save the design concept.');
+      setError(err instanceof Error ? err.message : 'Unable to save the inventory item.');
     } finally {
       setSaving(false);
     }
@@ -156,7 +175,7 @@ const AdminInventory = () => {
       setPendingDeleteIds([]);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to remove the design concept.');
+      setError(err instanceof Error ? err.message : 'Unable to remove inventory items.');
     } finally {
       setSaving(false);
     }
@@ -167,8 +186,13 @@ const AdminInventory = () => {
 
   return (
     <AdminShell
-      title={<><span>Inventory & </span><span className="italic">AI Atelier</span></>}
-      subtitle="Curate luxury collections, generate descriptions, and organise boutique stock"
+      title={
+        <>
+          <span>Inventory & </span>
+          <span className="italic">Model Shots</span>
+        </>
+      }
+      subtitle="Upload finished-product photos, generate boutique model shots, and publish ready stock or crafted deliveries"
     >
       {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm">{error}</div>}
 
@@ -176,95 +200,187 @@ const AdminInventory = () => {
         <section className="bg-white p-8 rounded-2xl border border-black/5 shadow-sm space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">Design Intake</p>
-              <h2 className="text-2xl font-serif mt-2">Add a new couture concept</h2>
+              <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">Product Intake</p>
+              <h2 className="text-2xl font-serif mt-2">Add inventory piece</h2>
             </div>
             <RoleBadge role={role ?? 'customer'} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              ['ready_stock', 'Ready Stock'],
+              ['delivered_craft', 'Crafted & Delivered'],
+            ] as [ShowcaseType, string][]).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setNewItem((c) => ({ ...c, showcaseType: value }))}
+                className={`px-4 py-3 text-[10px] uppercase tracking-[0.25em] font-bold border ${
+                  newItem.showcaseType === value
+                    ? 'bg-black text-white border-black'
+                    : 'border-black/10 hover:border-black'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="space-y-2">
               <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Design Name</span>
-              <input value={newItem.name} onChange={(e) => setNewItem((c) => ({ ...c, name: e.target.value }))} className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]" />
+              <input
+                value={newItem.name}
+                onChange={(e) => setNewItem((c) => ({ ...c, name: e.target.value }))}
+                className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
+              />
             </label>
             <label className="space-y-2">
               <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Category</span>
-              <select value={newItem.category} onChange={(e) => setNewItem((c) => ({ ...c, category: e.target.value }))} className="w-full border border-black/10 px-4 py-3 bg-white outline-none focus:border-[#D4AF37]">
-                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+              <select
+                value={newItem.category}
+                onChange={(e) => setNewItem((c) => ({ ...c, category: e.target.value }))}
+                className="w-full border border-black/10 px-4 py-3 bg-white outline-none focus:border-[#D4AF37]"
+              >
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="space-y-2">
-              <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Price (INR)</span>
-              <input type="number" value={newItem.price} onChange={(e) => setNewItem((c) => ({ ...c, price: Number(e.target.value) }))} className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]" />
+              <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Cost Price (INR)</span>
+              <input
+                type="number"
+                value={newItem.costPrice ?? 0}
+                onChange={(e) => setNewItem((c) => ({ ...c, costPrice: Number(e.target.value) }))}
+                className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Selling Price (INR)</span>
+              <input
+                type="number"
+                value={newItem.price}
+                onChange={(e) => setNewItem((c) => ({ ...c, price: Number(e.target.value) }))}
+                className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Sale Price (optional)</span>
+              <input
+                type="number"
+                value={newItem.salePrice ?? ''}
+                onChange={(e) =>
+                  setNewItem((c) => ({
+                    ...c,
+                    salePrice: e.target.value === '' ? undefined : Number(e.target.value),
+                  }))
+                }
+                className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
+              />
             </label>
             <label className="space-y-2">
               <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Stock</span>
-              <input type="number" value={newItem.stock} onChange={(e) => setNewItem((c) => ({ ...c, stock: Number(e.target.value) }))} className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]" />
+              <input
+                type="number"
+                value={newItem.stock}
+                onChange={(e) => setNewItem((c) => ({ ...c, stock: Number(e.target.value) }))}
+                className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
+                disabled={newItem.showcaseType === 'delivered_craft'}
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">SKU</span>
+              <input
+                value={newItem.sku || ''}
+                onChange={(e) => setNewItem((c) => ({ ...c, sku: e.target.value }))}
+                className="w-full border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">GST %</span>
+              <select
+                value={newItem.gstRate ?? 5}
+                onChange={(e) => setNewItem((c) => ({ ...c, gstRate: Number(e.target.value) as FashionItem['gstRate'] }))}
+                className="w-full border border-black/10 px-4 py-3 bg-white outline-none focus:border-[#D4AF37]"
+              >
+                {[0, 3, 5, 12, 18, 28].map((rate) => (
+                  <option key={rate} value={rate}>
+                    {rate}%
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
 
           <label className="space-y-2 block">
             <span className="text-[10px] uppercase tracking-[0.3em] opacity-50">Boutique Description</span>
-            <textarea value={newItem.description} onChange={(e) => setNewItem((c) => ({ ...c, description: e.target.value }))} className="w-full min-h-[120px] border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]" />
+            <textarea
+              value={newItem.description}
+              onChange={(e) => setNewItem((c) => ({ ...c, description: e.target.value }))}
+              className="w-full min-h-[120px] border border-black/10 px-4 py-3 outline-none focus:border-[#D4AF37]"
+            />
           </label>
 
           <div className="border border-dashed border-black/10 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">Fabric Upload</p>
-                <p className="text-sm opacity-60 mt-2">Upload the raw fabric or embroidery shot used for this concept.</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">Product Photo</p>
+                <p className="text-sm opacity-60 mt-2">
+                  Upload a finished dress on hanger / plain background. Stored in Supabase Storage (not base64).
+                </p>
               </div>
               <label className="inline-flex items-center gap-2 border border-black/10 px-4 py-3 text-[10px] uppercase tracking-[0.3em] font-bold cursor-pointer hover:border-black">
                 <Upload size={14} />
                 Choose Image
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                <input type="file" accept="image/*" onChange={(e) => void handleImageUpload(e)} className="hidden" />
               </label>
             </div>
 
-            {newItem.fabricImageUrl && (
-              <img src={newItem.fabricImageUrl} alt="Fabric upload" className="w-full max-h-72 object-cover rounded-2xl" />
+            {(sourcePreview || newItem.fabricImageUrl) && (
+              <img
+                src={sourcePreview || newItem.fabricImageUrl}
+                alt="Product upload"
+                className="w-full max-h-72 object-cover rounded-2xl"
+              />
             )}
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => void runAiAnalysis()} disabled={saving || !newItem.fabricImageUrl} className="inline-flex items-center gap-2 border border-black/10 px-4 py-3 text-[10px] uppercase tracking-[0.3em] font-bold hover:border-black disabled:opacity-50">
-              <Wand2 size={14} />
-              Analyse Fabric
+            <button
+              type="button"
+              onClick={() => void runModelShot()}
+              disabled={saving || !newItem.fabricImageUrl}
+              className="inline-flex items-center gap-2 border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-3 text-[10px] uppercase tracking-[0.3em] font-bold text-[#a17f1a] disabled:opacity-50"
+            >
+              <Sparkles size={14} />
+              Generate Model Shot
             </button>
-            {(newItem.styles.length > 0 ? newItem.styles : previewFallbackStyles).map((style) => (
-              <button key={style} type="button" onClick={() => void runTryOn(style)} disabled={saving || !newItem.fabricImageUrl} className="border border-[#D4AF37]/30 bg-[#D4AF37]/10 px-4 py-3 text-[10px] uppercase tracking-[0.3em] font-bold text-[#a17f1a] disabled:opacity-50">
-                Preview {style}
-              </button>
-            ))}
-            <button type="button" onClick={() => void saveItem()} disabled={saving || !newItem.name || !newItem.fabricImageUrl} className="inline-flex items-center gap-2 bg-black text-white px-5 py-3 text-[10px] uppercase tracking-[0.3em] font-bold disabled:opacity-50">
+            <button
+              type="button"
+              onClick={() => void saveItem()}
+              disabled={saving || !newItem.name || !newItem.fabricImageUrl}
+              className="inline-flex items-center gap-2 bg-black text-white px-5 py-3 text-[10px] uppercase tracking-[0.3em] font-bold disabled:opacity-50"
+            >
               <CheckCircle2 size={14} />
-              Save Design
+              Save to Inventory
             </button>
           </div>
-
 
           {newItem.renderedImageUrl && (
             <div className="rounded-2xl border border-black/5 bg-[#fcfaf5] p-5 space-y-4">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">AI Couture Preview</p>
-                <h3 className="font-serif text-xl mt-2">Boutique look on model</h3>
+                <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">Storefront Catalog Image</p>
+                <h3 className="font-serif text-xl mt-2">AI boutique model shot</h3>
               </div>
-              <img src={newItem.renderedImageUrl} alt="AI couture preview" className="w-full max-h-[32rem] object-cover rounded-2xl" />
-              {previewDescription && <p className="text-sm opacity-70">{previewDescription}</p>}
-            </div>
-          )}
-
-          {aiResult && (
-            <div className="rounded-2xl bg-[#f8f4ea] border border-black/5 p-5 space-y-3">
-              <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">AI Atelier Notes</p>
-              <p className="text-sm opacity-70">{aiResult.description}</p>
-              {aiResult.suggestedStyles?.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {aiResult.suggestedStyles.map((style) => (
-                    <span key={style} className="px-3 py-1 rounded-full border border-black/10 text-[10px] uppercase tracking-[0.25em] font-bold">{style}</span>
-                  ))}
-                </div>
-              )}
+              <img
+                src={newItem.renderedImageUrl}
+                alt="AI model shot"
+                className="w-full max-h-[32rem] object-cover rounded-2xl"
+              />
+              {shotNote && <p className="text-sm opacity-70">{shotNote}</p>}
             </div>
           )}
         </section>
@@ -273,7 +389,7 @@ const AdminInventory = () => {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">Current Collection</p>
-              <h2 className="text-2xl font-serif mt-2">Active designs</h2>
+              <h2 className="text-2xl font-serif mt-2">Active inventory</h2>
             </div>
             <div className="flex items-center gap-3">
               {items.length > 0 && (
@@ -304,7 +420,10 @@ const AdminInventory = () => {
 
           <div className="space-y-4 max-h-[900px] overflow-auto pr-1">
             {items.map((item) => (
-              <article key={item.id} className="grid grid-cols-[auto_92px_1fr_auto] gap-4 items-center border border-black/5 rounded-2xl p-4">
+              <article
+                key={item.id}
+                className="grid grid-cols-[auto_92px_1fr_auto] gap-4 items-center border border-black/5 rounded-2xl p-4"
+              >
                 <label className="flex items-center justify-center">
                   <input
                     type="checkbox"
@@ -314,11 +433,22 @@ const AdminInventory = () => {
                     aria-label={`Select ${item.name}`}
                   />
                 </label>
-                <img src={item.renderedImageUrl || item.fabricImageUrl} alt={item.name} className="w-[92px] h-[92px] object-cover rounded-2xl" />
+                <img
+                  src={item.renderedImageUrl || item.fabricImageUrl}
+                  alt={item.name}
+                  className="w-[92px] h-[92px] object-cover rounded-2xl"
+                />
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-serif text-lg">{item.name}</h3>
-                    {item.isOneOfOne && <span className="text-[10px] uppercase tracking-[0.25em] bg-black text-white px-2 py-1">1 of 1</span>}
+                    <span className="text-[9px] uppercase tracking-[0.2em] border border-black/10 px-2 py-1">
+                      {item.showcaseType === 'delivered_craft' ? 'Crafted' : 'Ready'}
+                    </span>
+                    {item.isOneOfOne && (
+                      <span className="text-[10px] uppercase tracking-[0.25em] bg-black text-white px-2 py-1">
+                        1 of 1
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm opacity-60 line-clamp-2">{item.description}</p>
                   <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.25em] opacity-50">
@@ -327,15 +457,27 @@ const AdminInventory = () => {
                     <span>{item.stock} in stock</span>
                     <span>•</span>
                     <span>₹{item.price.toLocaleString()}</span>
+                    {item.costPrice != null && (
+                      <>
+                        <span>•</span>
+                        <span>Cost ₹{item.costPrice.toLocaleString()}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <button type="button" onClick={() => void deleteItem(item.id)} className="border border-red-200 text-red-600 px-3 py-3 rounded-xl hover:bg-red-50">
+                <button
+                  type="button"
+                  onClick={() => void deleteItem(item.id)}
+                  className="border border-red-200 text-red-600 px-3 py-3 rounded-xl hover:bg-red-50"
+                >
                   <Trash2 size={16} />
                 </button>
               </article>
             ))}
 
-            {items.length === 0 && <div className="py-20 text-center opacity-35 italic font-serif">The inventory atelier is still empty.</div>}
+            {items.length === 0 && (
+              <div className="py-20 text-center opacity-35 italic font-serif">The inventory atelier is still empty.</div>
+            )}
           </div>
         </section>
       </div>
@@ -345,11 +487,11 @@ const AdminInventory = () => {
           <div className="w-full max-w-xl rounded-[2rem] bg-white border border-black/5 shadow-2xl p-8 space-y-6">
             <div className="space-y-3">
               <p className="text-[10px] uppercase tracking-[0.3em] opacity-45">Delete Confirmation</p>
-              <h3 className="text-3xl font-serif">Remove selected couture designs?</h3>
+              <h3 className="text-3xl font-serif">Remove selected inventory pieces?</h3>
               <p className="text-sm opacity-65">
                 {pendingDeleteIds.length === 1
-                  ? 'This design will be permanently removed from the boutique collection.'
-                  : `${pendingDeleteIds.length} selected designs will be permanently removed from the boutique collection.`}
+                  ? 'This piece will be permanently removed from the boutique collection.'
+                  : `${pendingDeleteIds.length} selected pieces will be permanently removed from the boutique collection.`}
               </p>
             </div>
 
@@ -369,7 +511,11 @@ const AdminInventory = () => {
                 className="inline-flex items-center gap-2 bg-black text-white px-5 py-3 text-[10px] uppercase tracking-[0.3em] font-bold disabled:opacity-50"
               >
                 <Trash2 size={14} />
-                {saving ? 'Deleting...' : pendingDeleteIds.length === 1 ? 'Delete Design' : `Delete ${pendingDeleteIds.length} Designs`}
+                {saving
+                  ? 'Deleting...'
+                  : pendingDeleteIds.length === 1
+                    ? 'Delete Piece'
+                    : `Delete ${pendingDeleteIds.length} Pieces`}
               </button>
             </div>
           </div>

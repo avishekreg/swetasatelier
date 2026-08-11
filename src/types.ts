@@ -7,6 +7,8 @@ export type UserRole =
   | 'promotions'
   | 'customer';
 
+export type ShowcaseType = 'ready_stock' | 'delivered_craft';
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -14,7 +16,6 @@ export interface UserProfile {
   favorites: string[];
   createdAt: any;
 }
-
 
 export interface StaffAccount {
   uid: string;
@@ -43,6 +44,7 @@ export interface FashionItem {
   name: string;
   description: string;
   price: number;
+  costPrice?: number;
   category: string;
   fabricImageUrl: string;
   renderedImageUrl?: string;
@@ -51,6 +53,13 @@ export interface FashionItem {
   salePrice?: number;
   saleDescription?: string;
   styles: string[];
+  showcaseType: ShowcaseType;
+  barcodeString?: string;
+  barcodeUrl?: string;
+  sku?: string;
+  gstRate?: GSTRate;
+  isPublished?: boolean;
+  sourceOrderId?: string;
   createdAt: any;
 }
 
@@ -73,6 +82,8 @@ export interface OrderItem {
   quantity: number;
   type: 'stitched' | 'material';
   measurements?: Record<string, string>;
+  unitPrice?: number;
+  unitCost?: number;
 }
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered';
@@ -96,7 +107,6 @@ export interface Measurements {
   length?: string;
   sleeveLength?: string;
 }
-
 
 export type GSTRate = 0 | 3 | 5 | 12 | 18 | 28;
 export type GSTTaxMode = 'intra_state' | 'inter_state';
@@ -134,9 +144,34 @@ export interface AccountingEntry {
   sgstAmount: number;
   igstAmount: number;
   totalAmount: number;
+  costAmount?: number;
+  marginAmount?: number;
+  profitAmount?: number;
   paymentStatus: InvoicePaymentStatus;
   paymentMethod: string;
   notes?: string;
+  createdAt: any;
+  updatedAt?: any;
+}
+
+export interface SystemSettings {
+  enableBarcodeInventory: boolean;
+  enableModelShotAi: boolean;
+  defaultGstRate: GSTRate;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface Review {
+  id: string;
+  itemId: string;
+  orderId: string;
+  userId: string;
+  rating: number;
+  reviewText: string;
+  clientPhotoUrl?: string;
+  isVerified: boolean;
+  isPublished: boolean;
   createdAt: any;
   updatedAt?: any;
 }
