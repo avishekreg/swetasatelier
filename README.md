@@ -56,6 +56,17 @@ Point Razorpay webhooks to `https://<your-domain>/api/razorpay-webhook` for `pay
 
 RLS policies in `supabase-schema.sql` align staff order/promo access with these roles.
 
-## Migration note (Phase 1)
+## Demo users
 
-Phase 1 adds Supabase schema, Vercel API routes, and removes Netlify/Firebase Admin. The browser storefront still uses the Firebase client for Auth/Firestore until Phase 2 rewrites `AuthContext` and `storeService` to Supabase Auth/Postgres.
+Seed all role accounts (requires `.env.local` with service role key):
+
+```bash
+npm run seed:demo-users
+```
+
+Shared demo password: `AtelierDemo2026!`  
+Emails: `superadmin@`, `admin@`, `fulfillment@`, `shipping@`, `care@`, `promotions@`, `customer@` + `swetasatelier.demo`
+
+## Auth & data
+
+The app uses **Supabase Auth + Postgres** for login, catalog, orders, accounts, and staff APIs.

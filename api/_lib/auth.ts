@@ -36,7 +36,8 @@ export function getBearerToken(req: VercelRequest): string | null {
 }
 
 export function getAnonClient(token?: string | null) {
-  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const urlRaw = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const url = urlRaw.replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
   const anon = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
   if (!url || !anon) {
@@ -59,7 +60,8 @@ export function getAnonClient(token?: string | null) {
 }
 
 export function getServiceClient() {
-  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const urlRaw = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const url = urlRaw.replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceKey) {

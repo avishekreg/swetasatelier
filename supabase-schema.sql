@@ -329,6 +329,10 @@ drop policy if exists users_select_own_or_privileged on public.users;
 create policy users_select_own_or_privileged on public.users
   for select using (id = auth.uid() or public.is_privileged());
 
+drop policy if exists users_insert_self_customer on public.users;
+create policy users_insert_self_customer on public.users
+  for insert with check (id = auth.uid() and role = 'customer');
+
 drop policy if exists users_update_own_or_privileged on public.users;
 create policy users_update_own_or_privileged on public.users
   for update using (id = auth.uid() or public.is_privileged())

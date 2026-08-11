@@ -12,7 +12,7 @@ const ProductList = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
-  const { profile, user } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
   const category = searchParams.get('cat');
 
   useEffect(() => {
@@ -54,7 +54,7 @@ const ProductList = () => {
   const toggleFavorite = async (id: string) => {
     if (user) {
       await UserService.toggleFavorite(user.uid, id);
-      // Reload or update local state
+      await refreshProfile();
     }
   };
 
